@@ -5,6 +5,9 @@
 
 #define SOUND_SPEED 0.034
 
+#define RED_LED 2
+#define YELLOW_LED 12
+#define GREEN_LED 13
 #define TRIGGER_PIN 14
 #define ECHO_PIN 15
 
@@ -16,10 +19,10 @@ const char* password = "j4n4qwxsq83qj";
 const char* mqtt_server = "mqtt.flespi.io";
 
 // Replace with your MQTT credentials and topic
-const char* mqtt_username = "fgdsGA50UhQyJtS6nmzyV6J2ujOQPS4UW7bqy6egeUCLbkHou4Kg0k6irLY7rTPb";
+const char* mqtt_username = "SwoZQpQ9og9iDXB4a6gcI6cZI9tYkiW2C9PioufAyfI107T0303AW3ns0HfbN11f";
 const char* mqtt_password = "";
  char* clientID="1";
- char* mqtt_topic = "parklever/1/";
+ char* mqtt_topic = "parklever/1/1";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -45,6 +48,8 @@ void setup() {
       delay(1000);
     }
   }
+  mqttClient.subscribe("parklever/1/1/response");
+  
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -78,9 +83,14 @@ void setup() {
 
   pinMode(TRIGGER_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT_PULLDOWN);
+  pinMode(YELLOW_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
 }
 
 void loop() {
+  mqttClient.loop();
+
   digitalWrite(TRIGGER_PIN, LOW);
   delayMicroseconds(2);
   digitalWrite(TRIGGER_PIN, HIGH);
@@ -92,9 +102,12 @@ void loop() {
 
   // Calculate the distance in cm
   float distanceCm = duration * SOUND_SPEED/2;
-
-  if (distanceCm < 5) {
-    camera_fb_t *fb = esp_camera_fb_get();
+  
+  if (distanceCm < 20) {
+    delay(1000);
+    digitalWrite(YELLOW_LED, HIGH);
+    camera_fb_t * fb = NULL;
+    fb = esp_camera_fb_get(); // get fresh image
     if (!fb) {
       Serial.println("Camera capture failed");
       return;
@@ -105,13 +118,13 @@ void loop() {
 
     
     //boolean b = mqttClient.publish(strcat(mqtt_topic,clientID), base64Image.c_str());
-    boolean b = mqttClient.publish("parklever/1/1", base64Image.c_str());
+    boolean isSent = mqttClient.publish("parklever/1/1", base64Image.c_str());
     //mqttClient.publish(mqtt_topic, "bla");
-    if (b) Serial.print("\n\nYeS");
-    Serial.printf("Image sent to MQTT broker, %u bytes\n", fb->len);
-
-    esp_camera_fb_return(fb);
-    delay(1000);
+    if (isSent) Serial.printf("Image sent to MQTT broker, %u bytes\n", fb->len);
+ 
+    delay(5000);
+    esp_camera_fb_return(fb); // dispose the buffered image
+    digitalWrite(YELLOW_LED, LOW);
   }
   
   /*
@@ -139,5 +152,21 @@ void loop() {
 }
 
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
-  // Handle MQTT messages received on subscribed topics
+  Serial.println("Response received!!!");
+    // Parse the payload into a boolean variable
+  bool value = false;
+  if (length == 1 && payload[0] == '1') {
+    value = true;
+  }
+  
+  // Perform action based on the boolean value
+  if (value) {
+    digitalWrite(GREEN_LED, HIGH);
+    delay(2000);
+    digitalWrite(GREEN_LED, LOW);
+  } else {
+    digitalWrite(RED_LED, HIGH);
+    delay(2000);
+    digitalWrite(RED_LED, LOW);
+  }
 }
