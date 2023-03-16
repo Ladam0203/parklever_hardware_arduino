@@ -30,13 +30,18 @@ void setup() {
   setupCamera();
 }
 
+bool processingImage = false;
 void loop() {
   mqttClient.loop();
-  if (measureDistanceCm() < 20) {
+  if (measureDistanceCm() < 40 && !processingImage) {
+    processingImage = true;
+
     delay(1000);
     digitalWrite(YELLOW_LED, HIGH);
     
     String base64Image = capture();
+    if (base64Image == "") return;
+    
     bool isSent = sendImage(base64Image);
     if (isSent) {
       Serial.println("Image sent to MQTT broker");
@@ -45,6 +50,8 @@ void loop() {
     
     delay(5000);
     digitalWrite(YELLOW_LED, LOW);
+    
+    processingImage = false;
   }
 }
 
@@ -127,10 +134,13 @@ float measureDistanceCm() {
 
 String capture() {
   camera_fb_t * fb = NULL;
+  fb = esp_camera_fb_get();
+  esp_camera_fb_return(fb);
+  fb = NULL;
   fb = esp_camera_fb_get(); // get fresh image
   if (!fb) {
     Serial.println("Camera capture failed");
-    return;
+    return "";
   }
   String base64Image = base64::encode(fb->buf, fb->len);
   esp_camera_fb_return(fb); // dispose the buffered image  
@@ -142,7 +152,6 @@ bool sendImage(String base64Image) {
 }
 
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
-  Serial.println("Response received!!!");
     // Parse the payload into a boolean variable
   bool value = false;
   if (length == 1 && payload[0] == '1') {
