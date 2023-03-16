@@ -21,8 +21,9 @@ const char* mqtt_server = "mqtt.flespi.io";
 // Replace with your MQTT credentials and topic
 const char* mqtt_username = "SwoZQpQ9og9iDXB4a6gcI6cZI9tYkiW2C9PioufAyfI107T0303AW3ns0HfbN11f";
 const char* mqtt_password = "";
- char* clientID="1";
- char* mqtt_topic = "parklever/1/1";
+char* clientID="1";
+char* mqtt_topic = "parklever/1/1";
+char* mqtt_topic_listen = "parklever/1/1/result";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
