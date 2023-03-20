@@ -15,9 +15,7 @@ const char* password = "j4n4qwxsq83qj";
 const char* mqtt_server = "mqtt.flespi.io";
 const char* mqtt_username = "SwoZQpQ9og9iDXB4a6gcI6cZI9tYkiW2C9PioufAyfI107T0303AW3ns0HfbN11f";
 const char* mqtt_password = "";
-char* clientID="1"; //This client id should be joined to the mqqtt topic
 char* mqtt_topic = "parklever/1/1";
-char* mqtt_topic_listen = "parklever/1/1/result";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -56,8 +54,10 @@ void loop() {
 }
 
 void setupPins() {
+  //Distance sensor
   pinMode(TRIGGER_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT_PULLDOWN);
+  //LEDs
   pinMode(YELLOW_LED, OUTPUT);
   pinMode(GREEN_LED, OUTPUT);
   pinMode(RED_LED, OUTPUT);
